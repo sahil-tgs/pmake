@@ -1,0 +1,5 @@
+{
+    "cpp_source_files": ["test.cpp"],
+    "compiler": "g++",
+    "compiler_options": ["-o", "output"]
+}
