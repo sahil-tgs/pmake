@@ -1,12 +1,5 @@
-import json
 import os
 import subprocess
-
-def read_config(filename):
-    """Read configuration from file."""
-    with open(filename, 'r') as f:
-        config = json.load(f)
-    return config
 
 def detect_os():
     """Detect the operating system."""
@@ -22,29 +15,30 @@ def check_compiler(compiler):
     except subprocess.CalledProcessError:
         return False
 
+def parse_makefile(filename):
+    """Parse the Makefile to extract source files."""
+    src_files = []
+    with open(filename, 'r') as f:
+        for line in f:
+            if line.startswith('SRC'):
+                src_files.extend(line.strip().split('=')[1].split())
+    return src_files
+
 def compile_project(source_files, compiler, options):
     """Compile the project using the given compiler and options."""
     compile_command = [compiler] + options + source_files
     subprocess.run(compile_command, check=True)
 
 def main():
-    # Read configuration
-    config = read_config('config.json')  # Path adjusted for config.json in the main directory
-
-    # Extract settings
-    cpp_source_files = config.get('cpp_source_files', [])
-    compiler = config.get('compiler', 'g++')
-    compiler_options = config.get('compiler_options', [])
-
     # Detect the operating system
     os_name = detect_os()
     print("Detected OS:", os_name)
 
-    # Choose terminal script based on OS
+    # Choose compiler based on OS
     if os_name == 'posix':  # Unix-like systems
-        terminal_script = 'bash'
+        compiler = 'g++'
     elif os_name == 'nt':   # Windows
-        terminal_script = 'cmd'
+        compiler = 'g++'  # Adjust if using a different compiler on Windows
     else:
         print("Unsupported operating system")
         return
@@ -54,10 +48,18 @@ def main():
         print("Compiler not found:", compiler)
         return
 
-    # Compile the C++ source files
+    # Parse the Makefile to extract source files
+    makefile = 'Makefile'
+    if not os.path.exists(makefile):
+        print(f"{makefile} not found")
+        return
+
+    source_files = parse_makefile(makefile)
+
+    # Compile the project
     try:
-        compile_project(cpp_source_files, compiler, compiler_options)
-        print("C++ project compiled successfully.")
+        compile_project(source_files, compiler, ['-std=c++11', '-o', 'output'])
+        print("Project compiled successfully.")
     except subprocess.CalledProcessError as e:
         print("Compilation failed:", e)
 
